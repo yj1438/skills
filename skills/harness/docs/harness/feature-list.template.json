@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "project": "project-name",
+  "description": "Project description",
+  "features": [
+    {
+      "id": "feat-001",
+      "priority": 1,
+      "category": "core",
+      "title": "Feature Name",
+      "description": "What the user can do with this feature",
+      "passes": false,
+      "e2e_test_steps": [
+        {
+          "step": 1,
+          "action": "User action description",
+          "expected_result": "What should happen"
+        }
+      ],
+      "acceptance_criteria": [
+        "Backend API endpoint returns 200 OK",
+        "Frontend displays data correctly",
+        "No console errors"
+      ],
+      "dependencies": [],
+      "estimated_effort": "2-3 hours",
+      "notes": "Additional notes"
+    }
+  ],
+  "technical_stack": {
+    "frontend": "React 18 + Vite + TypeScript + Tailwind + Shadcn UI",
+    "backend": "FastAPI + PostgreSQL + Prisma",
+    "testing": "Playwright + Vitest",
+    "deployment": "Vercel (frontend) + Railway/Render (backend)"
+  },
+  "completion_status": {
+    "completed_features": 0,
+    "total_features": 0,
+    "completion_percentage": 0
+  }
+}

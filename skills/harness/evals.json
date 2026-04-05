@@ -1,0 +1,23 @@
+{
+  "skill_name": "harness",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我想从零做一个 CRM 风格的销售线索管理 Web 应用。先别直接写代码，按可多轮推进的方式来：先帮我梳理需求、给出产品方向，等我确认后再拆 feature。",
+      "expected_output": "触发 harness 流程：先澄清需求并起草 spec，给出结构化确认摘要，明确在用户确认前不进入开发或生成最终 feature list。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "这个仓库接下来要做一个中后台管理系统，别一次做完。我要你每轮只做一个 feature，并把进度持续写到 docs/harness 里。先告诉我你会怎么组织整个流程。",
+      "expected_output": "触发 harness 流程：说明 product-spec、feature-list、sprint-contract、progress、evaluation-report 的分工，并强调单 feature 迭代与独立验收。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "帮我修一下登录页按钮文案，把‘立即开始’改成‘登录’，只改这个小问题。",
+      "expected_output": "不应强行进入重型 harness 流程，而应判断这是小改动，不适合使用 harness。",
+      "files": []
+    }
+  ]
+}
