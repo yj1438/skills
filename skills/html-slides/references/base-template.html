@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRESENTATION_TITLE</title>
+<style>
+  /* ── Font Loading ── */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  /* ── Theme Variables ── */
+  :root {
+    --bg: #0a0a0a;
+    --text: #fafafa;
+    --text-secondary: #86868b;
+    --text-tertiary: #6e6e73;
+    --accent: #c9a96e;
+    --accent-dim: rgba(201,169,110,0.12);
+    --negative: #ff3b30;
+    --positive: #34c759;
+    --info: #007aff;
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(255,255,255,0.06);
+    --card-border-hover: rgba(255,255,255,0.15);
+    --slide-w: 1280px;
+    --slide-h: 720px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+
+  /* ── Slide Shell ── */
+  .deck {
+    position: relative;
+    width: var(--slide-w);
+    height: var(--slide-h);
+    margin: auto;
+    transform-origin: center center;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 100px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s cubic-bezier(.4,0,.2,1), visibility 0.6s;
+    overflow: hidden;
+  }
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ── Typography ── */
+  .serif { font-family: 'Noto Serif SC', 'Georgia', serif; }
+  .sans  { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+
+  .kicker {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .headline {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .subline {
+    font-size: 20px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-top: 24px;
+    font-weight: 300;
+    max-width: 680px;
+  }
+  .en {
+    font-size: 15px;
+    color: var(--text-tertiary);
+    line-height: 1.6;
+    font-weight: 300;
+    margin-top: 8px;
+  }
+
+  /* ── Layout Modules ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-top: 48px;
+  }
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 48px;
+    margin-top: 48px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: var(--card-border-hover); }
+  .card .num {
+    font-size: 48px;
+    font-weight: 200;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 16px 0 10px;
+  }
+  .card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .vs-block { margin-top: 40px; }
+  .vs-label {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .vs-left .vs-label { background: rgba(255,59,48,0.15); color: var(--negative); }
+  .vs-right .vs-label { background: rgba(52,199,89,0.15); color: var(--positive); }
+  .vs-block h3 { font-size: 26px; font-weight: 700; margin-bottom: 12px; }
+  .vs-block p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+  .vs-block .en { font-size: 13px; }
+
+  .big-quote {
+    font-size: 42px;
+    font-weight: 300;
+    line-height: 1.45;
+    letter-spacing: -0.5px;
+    max-width: 900px;
+  }
+  .big-quote strong {
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    margin-top: 48px;
+    text-align: center;
+  }
+  .stat-item { padding: 32px 24px; }
+  .stat-item + .stat-item { border-left: 1px solid var(--card-border); }
+  .stat-num {
+    font-size: 56px;
+    font-weight: 200;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 5px 16px;
+    border-radius: 100px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  .accent-line {
+    width: 48px;
+    height: 2px;
+    background: var(--accent);
+    margin-bottom: 32px;
+    border-radius: 1px;
+  }
+
+  /* ── Navigation ── */
+  .nav {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 100;
+    background: rgba(10,10,10,0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 100px;
+    padding: 10px 24px;
+  }
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    transition: color 0.2s;
+  }
+  .nav button:hover { color: var(--text); }
+  .nav .counter {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .dot.active {
+    background: var(--accent);
+    width: 20px;
+    border-radius: 3px;
+  }
+
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    z-index: 200;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+  <!-- ━━━ SLIDE 1 · TITLE ━━━ -->
+  <div class="slide active" id="s1">
+    <div class="kicker">LABEL · CONTEXT</div>
+    <h1 class="headline serif">TITLE</h1>
+    <p class="subline">Subtitle text</p>
+  </div>
+
+  <!-- ━━━ SLIDE 2+ · CONTENT ━━━ -->
+  <!-- Add more slides here using layout patterns from slide-types.md -->
+
+</div><!-- /deck -->
+
+<!-- ── Navigation ── -->
+<div class="nav">
+  <button id="prev" aria-label="Previous slide">&#9664;</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / N</span>
+  <button id="next" aria-label="Next slide">&#9654;</button>
+</div>
+
+<script>
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const dots    = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+
+  for(let i=0;i<total;i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' active':'');
+    d.addEventListener('click', ()=> goTo(i));
+    dots.appendChild(d);
+  }
+
+  function goTo(n){
+    if(n<0||n>=total) return;
+    slides[current].classList.remove('active');
+    dots.children[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    dots.children[current].classList.add('active');
+    counter.textContent = (current+1)+' / '+total;
+    progress.style.width = ((current+1)/total*100)+'%';
+  }
+
+  document.getElementById('prev').addEventListener('click',()=>goTo(current-1));
+  document.getElementById('next').addEventListener('click',()=>goTo(current+1));
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' ') goTo(current+1);
+    if(e.key==='ArrowLeft') goTo(current-1);
+    if(e.key==='Home') goTo(0);
+    if(e.key==='End') goTo(total-1);
+  });
+
+  // Touch swipe
+  let tx=0;
+  document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-tx;
+    if(Math.abs(dx)>50){ dx<0?goTo(current+1):goTo(current-1); }
+  });
+
+  // Responsive scaling
+  function resize(){
+    const deck = document.getElementById('deck');
+    const sx = window.innerWidth / 1280;
+    const sy = window.innerHeight / 720;
+    const s = Math.min(sx, sy, 1);
+    deck.style.transform = 'scale('+s+')';
+    deck.style.marginTop = ((window.innerHeight - 720*s)/2)+'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  goTo(0);
+})();
+</script>
+</body>
+</html>

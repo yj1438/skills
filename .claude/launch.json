@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "test-magnifica-humanitas",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "_temp", "-p", "8787", "--no-clipboard"],
+      "port": 8787
+    }
+  ]
+}
