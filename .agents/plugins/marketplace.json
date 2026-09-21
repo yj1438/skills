@@ -1,0 +1,26 @@
+{
+  "name": "yj-skills",
+  "interface": {
+    "displayName": "YJ Skills"
+  },
+  "plugins": [
+    {
+      "name": "bilibili-restore",
+      "source": "./plugins/bilibili-restore",
+      "category": "media",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    },
+    {
+      "name": "html-slides",
+      "source": "./plugins/html-slides",
+      "category": "productivity",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}

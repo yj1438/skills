@@ -1,0 +1,36 @@
+{
+  "name": "yj-skills",
+  "owner": {
+    "name": "yinjie",
+    "url": "https://github.com/yj1438"
+  },
+  "metadata": {
+    "description": "yinjie 的双端 Agent 插件集（Claude Code / Codex）"
+  },
+  "plugins": [
+    {
+      "name": "bilibili-restore",
+      "source": "./plugins/bilibili-restore",
+      "description": "还原 bilibili 客户端离线缓存视频为 MP4",
+      "version": "1.0.0",
+      "author": {
+        "name": "yinjie",
+        "url": "https://github.com/yj1438"
+      },
+      "category": "media",
+      "keywords": ["bilibili", "video", "ffmpeg"]
+    },
+    {
+      "name": "html-slides",
+      "source": "./plugins/html-slides",
+      "description": "把 URL/文件/文本内容转成单文件 HTML 演示文稿",
+      "version": "1.0.0",
+      "author": {
+        "name": "yinjie",
+        "url": "https://github.com/yj1438"
+      },
+      "category": "productivity",
+      "keywords": ["slides", "presentation", "html"]
+    }
+  ]
+}

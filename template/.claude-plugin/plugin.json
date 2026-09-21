@@ -1,0 +1,12 @@
+{
+  "name": "example-plugin",
+  "displayName": "Example Plugin",
+  "version": "0.1.0",
+  "description": "模板插件：演示双端（Claude Code / Codex）插件的完整组件布局。复制本目录作为新插件的起点。",
+  "author": {
+    "name": "yinjie",
+    "url": "https://github.com/yj1438"
+  },
+  "keywords": ["template", "example"],
+  "mcpServers": "./mcp.json"
+}

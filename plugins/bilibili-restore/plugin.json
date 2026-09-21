@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "bilibili-restore",
+  "version": "1.0.0",
+  "description": "还原 bilibili 客户端离线缓存视频：扫描缓存目录，将 video.m4s + audio.m4s 无损合并为 MP4，支持归集输出与清单生成。",
+  "author": {
+    "name": "yinjie",
+    "url": "https://github.com/yj1438"
+  },
+  "homepage": "https://github.com/yj1438/skills",
+  "repository": "https://github.com/yj1438/skills",
+  "keywords": ["bilibili", "video", "ffmpeg", "m4s", "mp4"]
+}
