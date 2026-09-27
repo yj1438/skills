@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "html-slides",
+  "version": "1.0.0",
+  "description": "把任意内容来源（URL/文件/粘贴文本）提炼成叙事弧线，渲染为单文件 HTML 演示文稿，支持 Apple Dark/Light、Notion、Tech 四种视觉预设与双语配置。",
+  "author": {
+    "name": "yinjie",
+    "url": "https://github.com/yj1438"
+  },
+  "homepage": "https://github.com/yj1438/skills",
+  "repository": "https://github.com/yj1438/skills",
+  "keywords": ["slides", "presentation", "html", "deck", "ppt"]
+}
