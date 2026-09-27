@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "tmux-agent",
+  "version": "2.0.0",
+  "description": "通过 tmux 与本地 Claude Code、Codex 等 Agent CLI 会话协作",
+  "author": {
+    "name": "yinjie",
+    "url": "https://github.com/yj1438"
+  },
+  "homepage": "https://github.com/yj1438/resession",
+  "repository": "https://github.com/yj1438/resession",
+  "license": "MIT",
+  "keywords": ["tmux", "agent", "claude", "codex", "bridge"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "tmux Agent 协作",
+        "shortDescription": "通过统一 tmux 桥接与本地 Agent CLI 协作",
+        "developerName": "yinjie",
+        "category": "Coding"
+      }
+    }
+  }
+}

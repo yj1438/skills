@@ -31,6 +31,18 @@
       },
       "category": "productivity",
       "keywords": ["slides", "presentation", "html"]
+    },
+    {
+      "name": "tmux-agent",
+      "source": "./plugins/tmux-agent",
+      "description": "通过 tmux 与本地 Claude Code、Codex 等 Agent CLI 会话协作",
+      "version": "2.0.0",
+      "author": {
+        "name": "yinjie",
+        "url": "https://github.com/yj1438"
+      },
+      "category": "coding",
+      "keywords": ["tmux", "agent", "claude", "codex", "bridge"]
     }
   ]
 }

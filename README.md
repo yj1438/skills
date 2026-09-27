@@ -26,6 +26,7 @@ codex plugin marketplace add yj1438/skills
 |------|------|
 | [bilibili-restore](plugins/bilibili-restore/) | 还原 bilibili 客户端离线缓存视频：合并 `video.m4s` + `audio.m4s` 为 MP4，支持 `--output` 归集、`--index` 清单 |
 | [html-slides](plugins/html-slides/) | 把 URL/文件/粘贴文本提炼成叙事弧线，渲染为单文件 HTML 演示文稿（4 种视觉预设、支持双语） |
+| [tmux-agent](plugins/tmux-agent/) | 通过 tmux 与本地 Claude Code / Codex CLI 会话协作（`tcc`/`tcx` 桥接；迁移自 resession 项目） |
 
 ## 仓库结构
 

@@ -21,6 +21,15 @@
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
       }
+    },
+    {
+      "name": "tmux-agent",
+      "source": "./plugins/tmux-agent",
+      "category": "coding",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
     }
   ]
 }
