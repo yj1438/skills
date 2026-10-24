@@ -10,6 +10,7 @@ yinjie 的双端 Agent 插件集 —— 同一份内容，同时发布为 **Clau
 /plugin marketplace add yj1438/skills
 /plugin install bilibili-restore@yj-skills
 /plugin install html-slides@yj-skills
+/plugin install tmux-agent@yj-skills
 ```
 
 ### Codex CLI
@@ -42,11 +43,16 @@ codex plugin marketplace add yj1438/skills
 │   │   ├── plugin.json                  # Codex portable 清单
 │   │   ├── SKILL.md
 │   │   └── scripts/
-│   └── html-slides/
+│   ├── html-slides/
+│   │   ├── .claude-plugin/plugin.json
+│   │   ├── plugin.json
+│   │   ├── SKILL.md
+│   │   └── references/
+│   └── tmux-agent/
 │       ├── .claude-plugin/plugin.json
 │       ├── plugin.json
 │       ├── SKILL.md
-│       └── references/
+│       └── scripts/ + tests/ + evals/
 └── template/                    # 完整插件模板（不进 marketplace，复制用）
 ```
 

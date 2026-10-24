@@ -11,6 +11,13 @@ to codex 按上面的方案实现，修改范围限于 src/cache
 
 调用侧会展开“上面”等上下文，按咨询、只读评审、授权实现、状态或移交生成消息。默认接收方完成后回传，不递归转交；共享工作区写任务串行。
 
+## 安装
+
+```
+/plugin marketplace add yj1438/skills
+/plugin install tmux-agent@yj-skills
+```
+
 ## 命令与会话
 
 ```bash
