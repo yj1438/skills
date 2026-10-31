@@ -35,8 +35,8 @@
     {
       "name": "tmux-agent",
       "source": "./plugins/tmux-agent",
-      "description": "通过 tmux 与本地 Claude Code、Codex 等 Agent CLI 会话协作",
-      "version": "2.0.0",
+      "description": "连接本机 Claude Code、Codex 的 CLI 与 Code App 会话，支持精确投递和结果回信",
+      "version": "2.1.1",
       "author": {
         "name": "yinjie",
         "url": "https://github.com/yj1438"

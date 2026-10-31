@@ -1,0 +1,1 @@
+target=busy:0.0 command=claude cwd=/workspace/project active=1 dead=0

@@ -1,0 +1,4 @@
+target=review-a:0.0 command=claude cwd=/workspace/project active=1 dead=0
+target=tc-project-main:0.0 command=claude cwd=/workspace/project active=1 dead=0
+target=tc-project-feature/foo:2.1 command=claude cwd=/workspace/project active=0 dead=0
+target=other:0.0 command=claude cwd=/workspace/other active=1 dead=0

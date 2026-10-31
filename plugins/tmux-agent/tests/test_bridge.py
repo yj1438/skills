@@ -5,11 +5,18 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import json
+import sys
 import tempfile
 import time
 import unittest
+import importlib.util
+from types import SimpleNamespace
+from unittest.mock import patch
 
-SCRIPTS = Path(__file__).resolve().parents[1] / 'skills/scripts'
+sys.dont_write_bytecode = True
+
+SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 TMUX = shutil.which('tmux')
 @unittest.skipUnless(TMUX, 'requires tmux')
 class BridgeTests(unittest.TestCase):
@@ -21,6 +28,7 @@ class BridgeTests(unittest.TestCase):
         subprocess.run(['git', 'init', '-q', '-b', 'feature/test', str(self.project)], check=True)
         self.bin = self.base / 'bin'
         self.bin.mkdir()
+        (self.bin / 'python3').symlink_to(sys.executable)
         # Inert CLI shim logs argv and reads real bracketed-paste bytes using cat.
         for name in ('claude', 'codex'):
             cli = self.bin / name
@@ -34,8 +42,11 @@ exec /bin/cat > "$BRIDGE_TEST_RECORDS/$name.input"
 """)
             cli.chmod(0o755)
         self.socket = self.base / 's'
+        # The isolated server must not inherit the user's login shell or startup cost.
+        self.tmux_config = self.base / 'tmux.conf'
+        self.tmux_config.write_text('set-option -g default-shell /bin/sh\n')
         wrapper = self.bin / 'tmux'
-        command = shlex.quote(TMUX) + ' -S ' + shlex.quote(str(self.socket)) + ' -f /dev/null'
+        command = shlex.quote(TMUX) + ' -S ' + shlex.quote(str(self.socket)) + ' -f ' + shlex.quote(str(self.tmux_config))
         # Only process identity is stubbed: the actual terminal reader is cat.
         # All session metadata, pane selection, capture and paste go to real tmux.
         wrapper.write_text("""#!/bin/sh
@@ -58,6 +69,15 @@ if [ "$1" = display-message ] && [ "$last" = '#{pane_current_command}' ]; then
   fi
   printf '%s\\n' "$actual"
   exit 0
+fi
+# Mirror the same inert-process identity substitution inside server-side guards.
+# Pane IDs, PIDs and native session IDs are still evaluated by real tmux.
+if [ "$1" = if-shell ] && [ "$2" = -F ]; then
+  actual=$(__TMUX__ display-message -p -t "$4" '#{pane_current_command}') || exit 1
+  if [ "$actual" = cat ]; then
+    condition=$(printf '%s' "$5" | sed 's/pane_current_command},codex/pane_current_command},cat/g;s/pane_current_command},claude/pane_current_command},cat/g')
+    set -- "$1" "$2" "$3" "$4" "$condition" "$6" "$7"
+  fi
 fi
 exec __TMUX__ "$@"
 """.replace('__TMUX__', command))
@@ -90,7 +110,7 @@ exec __TMUX__ "$@"
                 rows = subprocess.run([TMUX, '-S', str(self.socket), 'list-sessions', '-F', '#{session_id} #{session_name}'],
                                       env=self.env, text=True, capture_output=True, check=True).stdout.splitlines()
                 args[i] = next(row.split(' ', 1)[0] for row in rows if row.split(' ', 1)[1] == arg[1:])
-        return subprocess.run([TMUX, '-S', str(self.socket), '-f', '/dev/null', *args], env=self.env,
+        return subprocess.run([TMUX, '-S', str(self.socket), '-f', str(self.tmux_config), *args], env=self.env,
                               text=True, capture_output=True, check=True).stdout.strip()
 
     def start(self, agent):
@@ -157,6 +177,115 @@ exec __TMUX__ "$@"
                 time.sleep(.02)
             self.assertEqual(received, expected)
             self.assertFalse((self.project / 'NEVER').exists())
+
+    def test_app_reply_returns_to_exact_original_cli_identity_and_cwd(self):
+        for agent in ['claude', 'codex']:
+            _, target = self.start(agent)
+            endpoint = json.loads(self.run_helper(agent, 'address', target).stdout)
+            self.assertEqual(endpoint['kind'], agent + '-cli')
+            self.assertEqual(endpoint['cwd'], str(self.project.resolve()))
+            request = {'protocol': 'tmux-agent/1', 'kind': 'request',
+                       'request_id': '11111111-1111-4111-8111-111111111111',
+                       'to': {'kind': 'codex-app', 'target': '22222222-2222-4222-8222-222222222222'},
+                       'reply_to': endpoint}
+            command = ['/bin/bash', str(SCRIPTS / 'tmux-agent.sh'), 'reply', '--envelope', json.dumps(request),
+                       '--message', '完整结果\n中文 % $() `literal`']
+            # Starting from another cwd is intentional: callback uses its captured origin cwd.
+            pending = subprocess.run(command, cwd=self.base, env=self.env, text=True, capture_output=True)
+            self.assertEqual(pending.returncode, 4, pending.stdout + pending.stderr)
+            self.assertEqual(json.loads(pending.stdout)['status'], 'pending')
+            result = subprocess.run(command + ['--confirm-idle'], cwd=self.base, env=self.env,
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            received = (self.base / (agent + '.input')).read_bytes()
+            self.assertIn('完整结果\n中文 % $() `literal`'.encode(), received)
+            self.assertEqual(received.count(b'\x1b[200~'), 1)
+            # A changed snapshot cannot deliver a second message to the same named pane.
+            request['reply_to']['pane_pid'] = '999999'
+            stale = subprocess.run(command[:4] + [json.dumps(request)] + command[5:] + ['--confirm-idle'],
+                                   cwd=self.base, env=self.env, text=True, capture_output=True)
+            self.assertNotEqual(stale.returncode, 0)
+            self.assertEqual((self.base / (agent + '.input')).read_bytes(), received)
+
+    def app_bridge(self):
+        spec = importlib.util.spec_from_file_location('tmux_callback_test', SCRIPTS / 'app_bridge.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_callback_survives_window_renumber_and_extra_address_fields(self):
+        session, target = self.start('codex')
+        address = json.loads(self.run_helper('codex', 'address', target).stdout)
+        address['future_display_field'] = 'non-identity metadata'
+        self.tmux('move-window', '-s', session + ':0', '-t', session + ':3')
+        current = json.loads(self.run_helper('codex', 'address', address['pane_id']).stdout)
+        self.assertTrue(current['target'].endswith(':3.0'))
+        self.assertEqual(current['pane_id'], address['pane_id'])
+        bridge = self.app_bridge()
+        with patch.dict(os.environ, self.env, clear=True):
+            result = bridge.deliver(address, bridge.envelope('result', address, None, 'renumber reply'),
+                                    SimpleNamespace(timeout=10, confirm_idle=True, open_app=False))
+        self.assertEqual(result['status'], 'submitted')
+        self.assertIn(b'renumber reply', (self.base / 'codex.input').read_bytes())
+
+    def test_callback_does_not_follow_same_name_replacement_after_address_check(self):
+        self.tmux('new-session', '-d', '-s', 'race-keeper', 'sleep 60')
+        session, target = self.start('codex')
+        address = json.loads(self.run_helper('codex', 'address', target).stdout)
+        bridge = self.app_bridge()
+        original = bridge.cli_call
+        replacement = {}
+        def interleave(endpoint, command, *args, **kwargs):
+            result = original(endpoint, command, *args, **kwargs)
+            if command == 'address':
+                self.tmux('kill-session', '-t', '=' + session)
+                _, new_target = self.start('codex')
+                replacement.update(json.loads(self.run_helper('codex', 'address', new_target).stdout))
+            return result
+        with patch.dict(os.environ, self.env, clear=True), patch.object(bridge, 'cli_call', interleave):
+            with self.assertRaises(bridge.BridgeError):
+                bridge.deliver(address, bridge.envelope('result', address, None, 'must not arrive'),
+                               SimpleNamespace(timeout=10, confirm_idle=True, open_app=False))
+        self.assertNotEqual(address['pane_id'], replacement['pane_id'])
+        self.assertEqual((self.base / 'codex.input').read_bytes(), b'')
+
+    def test_checked_send_rechecks_native_id_in_server_before_mutation(self):
+        session, target = self.start('claude')
+        address = json.loads(self.run_helper('claude', 'address', target).stdout)
+        wrapper = self.bin / 'tmux'
+        original = wrapper.read_text()
+        real = shlex.quote(TMUX) + ' -S ' + shlex.quote(str(self.socket))
+        changed = '22222222-2222-4222-8222-222222222222'
+        # Change identity after the client's final scalar checks and buffer load.
+        guard = f'''
+if [ "$1" = if-shell ]; then
+  {real} set-option -t {shlex.quote('=' + session)} @tmux_claude_session_id {changed}
+fi
+'''
+        # set-option does not accept =name on every tmux: use the real session handle.
+        handle = self.tmux('display-message', '-p', '-t', target, '#{session_id}')
+        guard = guard.replace(shlex.quote('=' + session), shlex.quote(handle))
+        wrapper.write_text(original.replace('#!/bin/sh\n', '#!/bin/sh\n' + guard, 1))
+        result = self.run_helper('claude', 'send-checked', address['pane_id'], address['pane_pid'],
+                                 address['native_session_id'], 'must not arrive', ok=False)
+        self.assertIn('refusing stale CLI callback identity', result.stderr)
+        self.assertEqual((self.base / 'claude.input').read_bytes(), b'')
+
+    def test_failed_start_cannot_be_reused_as_a_successful_cli(self):
+        (self.bin / 'codex').write_text('#!/bin/sh\nexec /bin/sleep 60\n')
+        first = self.run_helper('codex', 'start', ok=False)
+        self.assertIn('did not become recognizable', first.stderr)
+        again = self.run_helper('codex', 'start', ok=False)
+        self.assertIn('Refusing to reuse', again.stderr)
+        self.assertNotIn('reused agent=', again.stdout)
+
+    def test_checked_send_rejects_wrong_pid_without_pasting(self):
+        _, target = self.start('codex')
+        address = json.loads(self.run_helper('codex', 'address', target).stdout)
+        result = self.run_helper('codex', 'send-checked', address['pane_id'], '999999',
+                                 address['native_session_id'], 'must not arrive', ok=False)
+        self.assertIn('refusing stale CLI callback identity', result.stderr)
+        self.assertEqual((self.base / 'codex.input').read_bytes(), b'')
 
     def test_legacy_claude_uuid_required_but_pane_metadata_optional(self):
         session, target = self.start('claude')

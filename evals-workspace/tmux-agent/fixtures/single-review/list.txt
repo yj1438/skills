@@ -1,0 +1,2 @@
+target=tc-project-main:0.0 command=claude cwd=/workspace/project active=1 dead=0
+target=shell:0.0 command=zsh cwd=/workspace/project active=1 dead=0

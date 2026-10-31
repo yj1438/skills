@@ -1,0 +1,4 @@
+Claude is running a tool…
+
+Bash command: npm test
+Allow command? [y/N]

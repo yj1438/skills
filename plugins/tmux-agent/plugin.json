@@ -1,21 +1,27 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "tmux-agent",
-  "version": "2.0.0",
-  "description": "通过 tmux 与本地 Claude Code、Codex 等 Agent CLI 会话协作",
+  "version": "2.1.1",
+  "description": "连接本机 Claude Code、Codex 的 CLI 与 Code App 会话，支持精确投递和结果回信",
   "author": {
     "name": "yinjie",
     "url": "https://github.com/yj1438"
   },
-  "homepage": "https://github.com/yj1438/resession",
-  "repository": "https://github.com/yj1438/resession",
+  "homepage": "https://github.com/yj1438/skills",
+  "repository": "https://github.com/yj1438/skills",
   "license": "MIT",
-  "keywords": ["tmux", "agent", "claude", "codex", "bridge"],
+  "keywords": [
+    "tmux",
+    "agent",
+    "claude",
+    "codex",
+    "bridge"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "tmux Agent 协作",
-        "shortDescription": "通过统一 tmux 桥接与本地 Agent CLI 协作",
+        "displayName": "Code 会话协作",
+        "shortDescription": "通过 tmux、queue 与 inbox 连接本机 Code 会话",
         "developerName": "yinjie",
         "category": "Coding"
       }

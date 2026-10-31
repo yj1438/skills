@@ -28,6 +28,9 @@ Usage:
   tmux-agent.sh <agent> send <session:window.pane> [message]
   tmux-agent.sh <agent> capture <session:window.pane> [history-lines]
   tmux-agent.sh <agent> status <session:window.pane>
+  tmux-agent.sh <agent> address <session:window.pane>
+  tmux-agent.sh <agent> address <pane-id>
+  tmux-agent.sh <agent> send-checked <pane-id> <expected-pid> <expected-native-id> [message]
 
 send 未提供消息参数时从 stdin 读取。
 target/attach/destroy 未提供 session 参数时，使用 PWD 派生的稳定名称。
@@ -192,11 +195,12 @@ require_target_session_contract() {
 # send 只允许写入当前前台命令确认为目标 CLI 的 pane，避免消息落到 shell 等进程。
 require_agent_pane() {
   local target=$1
+  local operation=${2:-send}
   local command
   command=$(tmux display-message -p -t "$target" '#{pane_current_command}')
   if ! adapter_is_process "$command"; then
-    printf 'Refusing to send: target %s is running %s, not a recognized %s process\n' \
-      "$target" "$command" "$ADAPTER_CLI" >&2
+    printf 'Refusing to %s: target %s is running %s, not a recognized %s process\n' \
+      "$operation" "$target" "$command" "$ADAPTER_CLI" >&2
     exit 1
   fi
 }
@@ -263,13 +267,32 @@ cmd_format_name() {
 }
 
 report_start_failure() {
-  printf 'failed to start agent=%s session=%s: CLI exited or tmux initialization failed; check CLI startup/configuration and capture/attach if the session still exists\n' \
+  printf 'failed to start agent=%s session=%s: CLI exited, did not become recognizable, or tmux initialization failed; check CLI startup/configuration and capture/attach if the session still exists\n' \
     "$AGENT" "$1" >&2
+}
+
+# A live bootstrap shell is not evidence that the CLI started. Bound the wait,
+# then check once more for an immediately exiting process; this is not TUI readiness.
+check_started_pane() {
+  local target=$1 attempt command dead
+  for attempt in {1..20}; do
+    dead=$(tmux display-message -p -t "$target" '#{pane_dead}') || return 1
+    [[ "$dead" == 0 ]] || return 1
+    command=$(tmux display-message -p -t "$target" '#{pane_current_command}') || return 1
+    if adapter_is_process "$command"; then
+      sleep 0.1
+      dead=$(tmux display-message -p -t "$target" '#{pane_dead}') || return 1
+      [[ "$dead" == 0 ]]
+      return
+    fi
+    sleep 0.1
+  done
+  return 1
 }
 
 cmd_start() {
   local cwd=${1:-$PWD}
-  local session root actual_root target launch pane_dead
+  local session root actual_root target launch
   session=$(stable_session_name "$cwd")
   root=$(project_root "$cwd")
 
@@ -286,6 +309,7 @@ cmd_start() {
     require_session_permission_mode "$session"
     adapter_validate_session "$session"
     target=$(resolve_session_target "$session")
+    require_agent_pane "$target" reuse
     printf 'reused agent=%s session=%s target=%s cwd=%s permission_mode=%s native_session_id=%s\n' \
       "$AGENT" "$session" "$target" "$root" "$ADAPTER_PERMISSION_MODE" "$(session_option "$session" session_id)"
     return 0
@@ -307,9 +331,7 @@ cmd_start() {
          set_session_option "$session" permission_mode "$ADAPTER_PERMISSION_MODE" &&
          set_session_option "$session" session_id "$AGENT_SESSION_ID" &&
          set_session_option "$session" pane_id "$target" &&
-         sleep 0.2 &&
-         pane_dead=$(tmux display-message -p -t "$target" '#{pane_dead}') &&
-         [[ "$pane_dead" == 0 ]] &&
+         check_started_pane "$target" &&
          target=$(resolve_session_target "$session"); }; then
     report_start_failure "$session"
     return 1
@@ -393,6 +415,49 @@ cmd_send() {
   printf 'sent to %s (%s chars)\n' "$target" "${#message}"
 }
 
+# Callback-only transport. Coordinates may change, but the original pane identity
+# must still match at mutation time. The tmux server evaluates -F without a shell.
+cmd_send_checked() {
+  local pane=${1:?pane id is required} expected_pid=${2:?expected pid is required}
+  local expected_native=${3?expected native id is required}
+  shift 3
+  local target message actual_command condition receipt buffer_name="tmux-agent-$$"
+  if [[ ! "$pane" =~ ^%[0-9]+$ || ! "$expected_pid" =~ ^[0-9]+$ ]] ||
+     { [[ -n "$expected_native" ]] && ! is_uuid "$expected_native"; }; then
+    printf 'refusing invalid callback identity\n' >&2
+    return 1
+  fi
+  target=$(target_from_pane "$pane") || return 1
+  require_agent_pane "$pane"
+  require_target_session_contract "$target"
+  actual_command=$(tmux display-message -p -t "$pane" '#{pane_current_command}') || return 1
+  if ! adapter_is_process "$actual_command"; then
+    printf 'refusing changed callback foreground process: %s\n' "$pane" >&2
+    return 1
+  fi
+  if (($# > 0)); then message=$*; else message=$(cat); fi
+  if [[ -z "$message" ]]; then printf 'message must not be empty\n' >&2; return 1; fi
+  # The only values inserted in command/format syntax are checked IDs and trusted
+  # adapter process names. The message is data in an independent tmux buffer.
+  printf '%s' "$message" | tmux load-buffer -b "$buffer_name" -
+  condition="#{&&:#{==:#{pane_id},$pane},#{&&:#{==:#{pane_pid},$expected_pid},#{&&:#{==:#{@${ADAPTER_METADATA}_session_id},$expected_native},#{==:#{pane_current_command},$actual_command}}}}"
+  if ! receipt=$(tmux if-shell -F -t "$pane" "$condition" \
+    "paste-buffer -dpr -b $buffer_name -t $pane ; send-keys -t $pane Enter ; display-message -p TMUX_AGENT_SENT" \
+    "delete-buffer -b $buffer_name ; display-message -p TMUX_AGENT_REFUSED"); then
+    tmux delete-buffer -b "$buffer_name" 2>/dev/null || true
+    printf 'callback send outcome unknown; do not resend\n' >&2
+    return 3
+  fi
+  if [[ "$receipt" == TMUX_AGENT_REFUSED ]]; then
+    printf 'refusing stale CLI callback identity: %s\n' "$pane" >&2
+    return 1
+  elif [[ "$receipt" != TMUX_AGENT_SENT ]]; then
+    printf 'callback send receipt unknown; do not resend\n' >&2
+    return 3
+  fi
+  printf 'sent to %s\n' "$pane"
+}
+
 # capture 只读历史；限制行数防止误取过大的 pane scrollback。
 cmd_capture() {
   local target=${1:?tmux target is required}
@@ -410,6 +475,42 @@ cmd_status() {
   local target=${1:?tmux target is required}
   require_target "$target"
   tmux display-message -p -t "$target" "target=#{session_name}:#{window_index}.#{pane_index} command=#{pane_current_command} cwd=#{pane_current_path} active=#{pane_active} dead=#{pane_dead} pid=#{pane_pid} permission_mode=#{@${ADAPTER_METADATA}_permission_mode} native_session_id=#{@${ADAPTER_METADATA}_session_id}"
+}
+
+# Capture a callback address while the original pane and project are known.
+# The receiver checks this snapshot again; a recycled pane is not the sender.
+target_from_pane() {
+  local pane=$1 actual
+  [[ "$pane" =~ ^%[0-9]+$ ]] || return 1
+  actual=$(tmux display-message -p -t "$pane" '#{pane_id}') || return 1
+  if [[ "$actual" != "$pane" ]]; then
+    printf 'refusing non-exact pane id: %s\n' "$pane" >&2
+    return 1
+  fi
+  tmux display-message -p -t "$pane" '#{session_name}:#{window_index}.#{pane_index}'
+}
+
+cmd_address() {
+  local target=${1:?tmux target is required} root pane pid native_id session
+  require_command python3
+  if [[ "$target" =~ ^%[0-9]+$ ]]; then
+    pane=$target
+    target=$(target_from_pane "$pane") || return 1
+  else
+    require_target "$target"
+    pane=$(tmux display-message -p -t "$target" '#{pane_id}') || return 1
+  fi
+  require_target "$target"
+  require_agent_pane "$pane"
+  require_target_session_contract "$target"
+  root=$(project_root "$PWD")
+  target=$(target_from_pane "$pane") || return 1
+  pid=$(tmux display-message -p -t "$pane" '#{pane_pid}') || return 1
+  session=$(tmux display-message -p -t "$pane" '#{session_name}') || return 1
+  native_id=$(session_option "$session" session_id)
+  python3 -c 'import json,sys; print(json.dumps(dict(zip(
+    ["kind","target","cwd","pane_id","pane_pid","native_session_id"], sys.argv[1:])), ensure_ascii=False))' \
+    "$AGENT-cli" "$target" "$root" "$pane" "$pid" "$native_id"
 }
 
 main() {
@@ -451,6 +552,10 @@ main() {
       shift
       cmd_send "$@"
       ;;
+    send-checked)
+      shift
+      cmd_send_checked "$@"
+      ;;
     capture)
       shift
       cmd_capture "$@"
@@ -458,6 +563,10 @@ main() {
     status)
       shift
       cmd_status "$@"
+      ;;
+    address)
+      shift
+      cmd_address "$@"
       ;;
     -h|--help|help|"")
       usage

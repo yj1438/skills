@@ -2,6 +2,8 @@
 
 使用能让意图和授权边界无歧义的最小信封；先替换占位符，不要把尖括号占位符原样发送。信封前缀 `CALLER` 代指调用侧 Agent，不限定其实现。将 `<TARGET>` 替换为 `CLAUDE` 或 `CODEX`；Claude 仍得到原有 `[CALLER→CLAUDE]` 前缀。每个实际信封加入约束：由接收方直接处理并回传，不再委派其它 Agent。
 
+App 路由使用这里的任务正文，由 [app-bridge.md](app-bridge.md) 的 Helper 加入请求编号和准确回信地址。向指定 reply_to 回传一次 kind=result 是本次交互的反馈，不是新委派；结果消息不再次转交或回信。
+
 ## 快速 Ping
 
 ```text
