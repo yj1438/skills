@@ -1,6 +1,6 @@
 ---
 name: tmux-agent
-description: "[v2.1.1] 连接本机 Claude Code / Codex 的 CLI 与 Code App 会话，支持发现、精确投递和一次结果回信。用户以 tcc / to claude、tcx / to codex 请求协作，或明确要求联系 Claude/Codex App、列出目标会话及跨端回信时使用；不用于普通聊天或通用终端自动化。"
+description: "[v2.1.2] 连接本机 Claude Code / Codex 的 CLI 与 Code App 会话，支持发现、精确投递和一次结果回信。用户以 tcc / to claude、tcx / to codex 请求协作，或明确要求联系 Claude/Codex App、列出目标会话及跨端回信时使用；不用于普通聊天或通用终端自动化。"
 ---
 
 # tmux-agent：本地 Code 会话协作

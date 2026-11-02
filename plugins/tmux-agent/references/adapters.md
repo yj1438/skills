@@ -17,7 +17,7 @@
 
 - `adapter_prepare_start`：设置 `ADAPTER_ARGV` Bash 数组及 `AGENT_SESSION_ID`（无法准确提供则为空）。只准备数据，不启动 tmux，不执行任务。
 - `adapter_validate_session <session>`：使用公共 `session_option` 读取并核验该 CLI 特有 metadata。契约不符时输出完整 `refusing` 错误并失败；不得修补或销毁旧会话。
-- `adapter_is_process <command>`：识别前台 CLI，匹配返回 0，不匹配返回非 0。不可宽泛接受 shell/node/python 等通用进程名。
+- `adapter_is_process <command>`：识别前台 CLI，匹配返回 0，不匹配返回非 0。不可宽泛接受 shell/node/python 等通用进程名。取进程名最后路径段比较，容忍 Windows 的 `<cli>.exe` 与完整路径形态；经 node 包装运行的 CLI（Windows npm 安装）由 core 层 `pane_runs_cli` 结合 `pane_start_command` 与前台 node 进程联合识别，适配器本身仍不接受裸 node。
 
 公共层以 `@<namespace>_managed/project_root/permission_mode/session_id/pane_id` 保存状态；原 Claude namespace 不变以兼容旧会话。空 session_id 不代表空任务，而是该适配器不具备原生 ID 契约。
 

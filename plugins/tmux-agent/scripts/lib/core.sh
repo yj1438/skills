@@ -192,13 +192,37 @@ require_target_session_contract() {
   fi
 }
 
+# Windows npm 包装的 CLI（codex/claude 经 node 运行）在 pane_current_command
+# 里只显示 node(.exe)。回退证据是 pane_start_command —— 该值是 Helper 创建
+# 面板时写入的启动命令，面板内容无法伪造；且仅当前台仍是 node 包装进程时
+# 才接受，避免把消息送进已切换到其它程序的 pane。
+pane_runs_cli() {
+  local target=$1 command start token base found
+  command=$(tmux display-message -p -t "$target" '#{pane_current_command}') || return 1
+  adapter_is_process "$command" && return 0
+  base=${command##*/}
+  base=${base##*\\}
+  [[ "$base" == node || "$base" == node.exe ]] || return 1
+  start=$(tmux display-message -p -t "$target" '#{pane_start_command}') || return 1
+  found=""
+  for token in $start; do
+    token=${token##*/}
+    token=${token##*\\}
+    if [[ "$token" == "$ADAPTER_CLI" ]]; then
+      found=1
+      break
+    fi
+  done
+  [[ -n "$found" ]]
+}
+
 # send 只允许写入当前前台命令确认为目标 CLI 的 pane，避免消息落到 shell 等进程。
 require_agent_pane() {
   local target=$1
   local operation=${2:-send}
   local command
   command=$(tmux display-message -p -t "$target" '#{pane_current_command}')
-  if ! adapter_is_process "$command"; then
+  if ! adapter_is_process "$command" && ! pane_runs_cli "$target"; then
     printf 'Refusing to %s: target %s is running %s, not a recognized %s process\n' \
       "$operation" "$target" "$command" "$ADAPTER_CLI" >&2
     exit 1
@@ -279,7 +303,7 @@ check_started_pane() {
     dead=$(tmux display-message -p -t "$target" '#{pane_dead}') || return 1
     [[ "$dead" == 0 ]] || return 1
     command=$(tmux display-message -p -t "$target" '#{pane_current_command}') || return 1
-    if adapter_is_process "$command"; then
+    if adapter_is_process "$command" || pane_runs_cli "$target"; then
       sleep 0.1
       dead=$(tmux display-message -p -t "$target" '#{pane_dead}') || return 1
       [[ "$dead" == 0 ]]
@@ -431,7 +455,7 @@ cmd_send_checked() {
   require_agent_pane "$pane"
   require_target_session_contract "$target"
   actual_command=$(tmux display-message -p -t "$pane" '#{pane_current_command}') || return 1
-  if ! adapter_is_process "$actual_command"; then
+  if ! adapter_is_process "$actual_command" && ! pane_runs_cli "$pane"; then
     printf 'refusing changed callback foreground process: %s\n' "$pane" >&2
     return 1
   fi

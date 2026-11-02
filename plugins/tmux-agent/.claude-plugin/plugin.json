@@ -1,7 +1,7 @@
 {
   "name": "tmux-agent",
   "displayName": "Code 会话协作",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "连接本机 Claude Code、Codex 的 CLI 与 Code App 会话，支持精确投递和结果回信",
   "author": {
     "name": "yinjie",

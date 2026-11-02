@@ -20,5 +20,9 @@ adapter_validate_session() {
 }
 
 adapter_is_process() {
-  [[ "$1" == claude ]]
+  # 自包含（测试会单独 source 本文件）：取最后路径段比较，容忍 Windows 的
+  # <cli>.exe 与完整路径形态；裸 node/python 等通用名仍不匹配。
+  local base=${1##*/}
+  base=${base##*\\}
+  [[ "$base" == claude || "$base" == claude.exe ]]
 }
