@@ -8,7 +8,7 @@ yinjie 的双端 Agent 插件集 —— 同一份内容，同时发布为 **Clau
 
 ```
 /plugin marketplace add yj1438/skills
-/plugin install bilibili-restore@yj-skills
+/plugin install bilibili-video@yj-skills
 /plugin install html-slides@yj-skills
 /plugin install tmux-agent@yj-skills
 ```
@@ -25,7 +25,7 @@ codex plugin marketplace add yj1438/skills
 
 | 插件 | 说明 |
 |------|------|
-| [bilibili-restore](plugins/bilibili-restore/) | 还原 bilibili 客户端离线缓存视频：合并 `video.m4s` + `audio.m4s` 为 MP4，支持 `--output` 归集、`--index` 清单 |
+| [bilibili-video](plugins/bilibili-video/) | 获取 bilibili 视频到本地：yt-dlp 下载在线视频（4K/杜比视界，含 cookies 手动导出流程）+ 还原客户端离线缓存（无损合并 m4s） |
 | [html-slides](plugins/html-slides/) | 把 URL/文件/粘贴文本提炼成叙事弧线，渲染为单文件 HTML 演示文稿（4 种视觉预设、支持双语） |
 | [tmux-agent](plugins/tmux-agent/) | v2.1.1：连接 Claude Code / Codex 的 CLI 与 Code App，会话发现、精确投递与结果回信；[Claude App 待实测试用](plugins/tmux-agent/references/claude-app-validation.md) |
 
@@ -38,10 +38,10 @@ codex plugin marketplace add yj1438/skills
 │   └── plugins/
 │       └── marketplace.json    # Codex marketplace（agent-plugins 格式）
 ├── plugins/
-│   ├── bilibili-restore/       # 单 skill 插件：SKILL.md 平铺在插件根目录
+│   ├── bilibili-video/         # 单 skill 插件：SKILL.md 平铺在插件根目录
 │   │   ├── .claude-plugin/plugin.json   # Claude 清单
 │   │   ├── plugin.json                  # Codex portable 清单
-│   │   ├── SKILL.md
+│   │   ├── SKILL.md                     # 下载 + 还原两条路径
 │   │   └── scripts/
 │   ├── html-slides/
 │   │   ├── .claude-plugin/plugin.json
