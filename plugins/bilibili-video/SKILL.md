@@ -11,6 +11,11 @@ description: 把 bilibili 视频获取到本地为 MP4。两条路径：①下�
 
 将 bilibili 客户端下载的离线缓存（`video.m4s` + `audio.m4s`）合并为可播放的 MP4 文件，并按 `[作者]标题.mp4` 命名。
 
+### 前置
+
+- ffmpeg 全局安装且在 PATH 中（如 `C:\Program Files\ffmpeg\bin`）
+- Node.js（脚本零第三方依赖，任意近版本即可）
+
 ### 目录结构
 
 bilibili 缓存的标准结构如下（新一代结构中 `entry.json` 位于 `c_<cid>/` 内、流文件在 `<清晰度>/` 子目录，脚本均兼容）：
@@ -87,14 +92,10 @@ node <skill-dir>/scripts/restore.js "<输入目录>" --index
 }
 ```
 
-### 前置条件
-
-- ffmpeg 必须在 PATH 中
-- 需要 Node.js（无第三方依赖）
-
 ### 注意
 
 - 脚本使用 `-codec copy` 不重编码，速度很快且无损
+- **合并产物只含音视频轨**：弹幕（`danmaku.xml/pb`）和封面（`cover.jpg`）不会带入 MP4；删除源缓存前如需保留，要另行导出
 - 如果目录结构不符合 bilibili 缓存格式（没有 index.json / video.m4s / audio.m4s），会提示未找到
 - 使用 `--output` 时，即使同名也会自动追加序号避免覆盖
 
@@ -104,7 +105,7 @@ node <skill-dir>/scripts/restore.js "<输入目录>" --index
 
 - yt-dlp 在 PATH 中（升级：`yt-dlp -U`）
 - ffmpeg（B 站音视频流分离，下载时自动合并）
-- cookies 文件：**登录态决定清晰度上限**。无登录封顶 1080P30（H.264，音轨 AAC ≤186k）；cookie 解锁 1080P60 / 4K60 / 杜比视界 / FLAC Hi-Res（格式 30251）
+- cookies 文件：**登录态决定清晰度上限**。无登录封顶 1080P30（H.264，音轨 AAC ≤186k）；cookie 解锁 1080P60 / 4K60 / 杜比视界 / FLAC Hi-Res（格式 30251）。会员画质还需账号本身具备权限（如大会员）；cookie 有时效，过期后探底档位骤降，重新导出即可
 
 ### cookies（关键认知）
 
