@@ -5,8 +5,8 @@
   },
   "plugins": [
     {
-      "name": "bilibili-restore",
-      "source": "./plugins/bilibili-restore",
+      "name": "bilibili-video",
+      "source": "./plugins/bilibili-video",
       "category": "media",
       "policy": {
         "installation": "AVAILABLE",
