@@ -25,7 +25,7 @@ codex plugin marketplace add yj1438/skills
 
 | 插件 | 说明 |
 |------|------|
-| [bilibili-video](plugins/bilibili-video/) | 获取 bilibili 视频到本地：yt-dlp 下载在线视频（4K/杜比视界，含 cookies 手动导出流程）+ 还原客户端离线缓存（无损合并 m4s） |
+| [bilibili-video](plugins/bilibili-video/) | 获取 bilibili 视频到本地：yt-dlp 下载在线视频（4K/杜比视界，含 cookies 手动导出流程）+ 还原客户端离线缓存（无损合并 m4s）+ 库清单自动登记（update-list.js） |
 | [html-slides](plugins/html-slides/) | 把 URL/文件/粘贴文本提炼成叙事弧线，渲染为单文件 HTML 演示文稿（4 种视觉预设、支持双语） |
 | [tmux-agent](plugins/tmux-agent/) | v2.1.1：连接 Claude Code / Codex 的 CLI 与 Code App，会话发现、精确投递与结果回信；[Claude App 待实测试用](plugins/tmux-agent/references/claude-app-validation.md) |
 

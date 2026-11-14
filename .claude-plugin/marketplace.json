@@ -11,8 +11,8 @@
     {
       "name": "bilibili-video",
       "source": "./plugins/bilibili-video",
-      "description": "获取 bilibili 视频到本地为 MP4：yt-dlp 下载在线视频（4K/杜比视界）+ 还原客户端离线缓存（无损合并）",
-      "version": "1.1.0",
+      "description": "获取 bilibili 视频到本地为 MP4：yt-dlp 下载在线视频（4K/杜比视界）+ 还原客户端离线缓存（无损合并）+ 库清单自动登记",
+      "version": "1.2.0",
       "author": {
         "name": "yinjie",
         "url": "https://github.com/yj1438"

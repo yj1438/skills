@@ -1,6 +1,6 @@
 ---
 name: bilibili-video
-description: 把 bilibili 视频获取到本地为 MP4。两条路径：①下载——yt-dlp 下载在线视频（4K/杜比视界/Hi-Res 需 cookies），用户说"下载B站视频"、"下载这个BV号"、"yt-dlp 下载"、"4K下载"、"杜比视界下载"时使用；②还原——合并客户端离线缓存 video.m4s + audio.m4s，用户说"还原bilibili缓存"、"合并m4s"、"处理离线视频"、"bilibili视频恢复"、"归集bilibili视频"、"导出bilibili视频"时使用。HDR 本地播放调参是人工操作，不在本 skill 范围。
+description: 把 bilibili 视频获取到本地为 MP4。两条路径：①下载——yt-dlp 下载在线视频（4K/杜比视界/Hi-Res 需 cookies），用户说"下载B站视频"、"下载这个BV号"、"yt-dlp 下载"、"4K下载"、"杜比视界下载"时使用；②还原——合并客户端离线缓存 video.m4s + audio.m4s，用户说"还原bilibili缓存"、"合并m4s"、"处理离线视频"、"bilibili视频恢复"、"归集bilibili视频"、"导出bilibili视频"时使用。入库/下载后用 update-list.js 登记库清单。HDR 本地播放调参是人工操作，不在本 skill 范围。
 ---
 
 # bilibili-video：B站视频入库
@@ -98,6 +98,7 @@ node <skill-dir>/scripts/restore.js "<输入目录>" --index
 - **合并产物只含音视频轨**：弹幕（`danmaku.xml/pb`）和封面（`cover.jpg`）不会带入 MP4；删除源缓存前如需保留，要另行导出
 - 如果目录结构不符合 bilibili 缓存格式（没有 index.json / video.m4s / audio.m4s），会提示未找到
 - 使用 `--output` 时，即使同名也会自动追加序号避免覆盖
+- 合并入库后运行 `update-list.js` 登记（见下节）
 
 ## 路径二：下载在线视频（yt-dlp）
 
@@ -111,7 +112,7 @@ node <skill-dir>/scripts/restore.js "<输入目录>" --index
 ### cookies（关键认知）
 
 - **`--cookies-from-browser chrome/edge` 已死**：Chrome 127+ 的 app-bound 加密使必然报 `Failed to decrypt with DPAPI`（yt-dlp #10927，设计使然无解），不要浪费尝试
-- 唯一可行：手动导出 Netscape 格式 txt——浏览器登录 bilibili.com → F12 → Network 任选一个 `api.bilibili.com` 请求 → 复制整条 `Cookie:` 头 → 每行 `.bilibili.com TRUE / TRUE <远期过期> name value`（SESSDATA 和 bili_jct 必须在）
+- 可行路线有二：①手动导出 Netscape 格式 txt——浏览器登录 bilibili.com → F12 → Network 任选一个 `api.bilibili.com` 请求 → 复制整条 `Cookie:` 头 → 每行 `.bilibili.com TRUE / TRUE <远期过期> name value`（SESSDATA 和 bili_jct 必须在）；②浏览器自动化——通过 [browser-harness](https://github.com/browser-use/browser-harness) 等工具附加本机已登录会话直接导出 cookies（2026-11 实测可用），具体获取方式由用户环境适配，不在本 skill 固化步骤
 - 本机 cookies 惯例路径 `C:\Users\yinjie\Downloads\bili-cookies.txt`
 - ⚠️ 凭证文件勿外传勿提交；不用时删除，泄露后在 B 站改密码即失效
 
@@ -145,3 +146,14 @@ B 站杜比视界是 HLG 基底 + RPU 元数据。下载的 HDR 片本地播放�
 - **多分 P 视频**：基础 URL 会下载全部分 P，文件名自动带 `pNN 标题`；只下某一 P 用 `URL?p=N`。大文件下载可能**静默失败**（无输出即失败），残片形如 `.fXXXXX.mp4` / `.m4a`，删除残片后对失败分 P 单独重跑即可（2026-11 实测：4 分 P 两个失败，均为网络抖动）
 - **同分辨率多编码时 `bv*` 自动选 AV1**（压缩效率优先，码率低但观感同级）；要码率最高的 AVC/HEVC 版本需按 `-F` 表显式指定格式 ID
 - Chrome 残留后台进程会锁 cookie 库（仅影响 `--cookies-from-browser`，手动导出的 cookies.txt 不受影响）
+- 下载到库目录后运行 `update-list.js` 登记（见下节）
+
+## 入库记录（video_list.json）
+
+视频库根目录维护一份 `video_list.json` 总表（当前约定库目录 `D:\Movie\bilibili`）。**无论离线缓存合并入库还是 yt-dlp 下载，完成后都运行一次同步脚本登记**：
+
+```bash
+node <skill-dir>/scripts/update-list.js "<库目录>"
+```
+
+行为：扫描库目录根层全部 mp4 → 对未登记文件探测编码/分辨率/时长并登记（文件名含 `[BVxxx]` 判定为 yt-dlp 下载来源，否则记为 restore_or_import）→ 重建总数并校验已登记文件的完整性。幂等可重复运行；legacy 历史记录按文件名比对，不会重复登记。
